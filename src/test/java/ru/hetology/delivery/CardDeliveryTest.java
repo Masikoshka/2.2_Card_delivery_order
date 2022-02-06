@@ -1,15 +1,15 @@
 package ru.hetology.delivery;
 
 import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
+import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 
@@ -18,21 +18,22 @@ public class CardDeliveryTest {
 
     @Test
     public void shouldSendForm() {
-        Calendar calendar = new GregorianCalendar();
-        calendar.roll(Calendar.DATE, +4);
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        String date = dateFormat.format(calendar.getTime());
+        Configuration.headless = true;
+        String planningDate = generateDate(5);
 
         open ("http://localhost:9999/");
-        $ ("[placeholder='Город']").setValue("Санкт-Петербург");
-        for (int i=0; i<8; i++) {
-            $("[placeholder='Дата встречи']").sendKeys(Keys.BACK_SPACE);
-        }
-        $ ("[placeholder='Дата встречи']").setValue(date);
-        $ ("[name='name']").setValue("Сюарт Мария");
-        $ ("[name='phone']").setValue("+71110623421");
+        $ ("[data-test-id='city'] input").setValue("Санкт-Петербург");
+        $ ("[data-test-id='date'] input").doubleClick().sendKeys(Keys.BACK_SPACE);
+        $ ("[data-test-id='date'] input").setValue(planningDate);
+        $ ("[data-test-id='name'] input").setValue("Сюарт Мария");
+        $ ("[data-test-id='phone'] input").setValue("+71110623421");
         $ (".checkbox__box").click();
         $ (".button__text").click();
         $ ("[data-test-id='notification']").shouldBe(Condition.appear, Duration.ofSeconds(15));
+        $ (".notification__content").shouldHave(text("Встреча успешно забронирована на " + planningDate));
+    }
+
+    String generateDate(int days) {
+        return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
 }
